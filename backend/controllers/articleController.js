@@ -30,14 +30,34 @@ module.exports.syncNewsData = async () => {
 
 module.exports.getArticles = async (req, res) => {
   try {
-    const articles = await articleModel.find().sort({ pubDate: -1 });
-    res
-      .status(200)
-      .json({ message: "Articles retrieved successfully", data: articles });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 12;
+    const skip = (page - 1) * limit;
+
+    const articles = await articleModel
+      .find()
+      .sort({ pubDate: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const totalArticles = await articleModel.countDocuments();
+    const totalPages = Math.ceil(totalArticles / limit);
+
+    res.status(200).json({
+      message: "Articles retrieved successfully",
+      pagination: {
+        totalResults: totalArticles,
+        totalPages: totalPages,
+        currentPage: page,
+        limit: limit,
+      },
+      data: articles,
+    });
   } catch (error) {
-    res
-      .status(400)
-      .json({ message: "Error retrieving articles", error: error.message });
+    res.status(400).json({
+      message: "Error retrieving articles",
+      error: error.message,
+    });
   }
 };
 
