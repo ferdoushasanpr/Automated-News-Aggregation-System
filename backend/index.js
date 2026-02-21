@@ -23,9 +23,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/api/news", articleRouter);
 
-//"0 */6 * * *" - every 6 hours
-
-cron.schedule("* * * * *", () => {
+cron.schedule("0 */6 * * *", () => {
   console.log("Running scheduled news sync...");
   syncNewsData();
 });
