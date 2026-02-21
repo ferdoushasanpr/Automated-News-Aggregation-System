@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 export default function ArticleCard({ article }) {
   return (
     <div className="flex flex-col overflow-hidden bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300">
-      {/* Image Section */}
       <div className="relative h-48 overflow-hidden bg-gray-100">
         {article.image_url ? (
           <img

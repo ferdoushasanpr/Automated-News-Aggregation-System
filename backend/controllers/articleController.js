@@ -30,34 +30,42 @@ module.exports.syncNewsData = async () => {
 
 module.exports.getArticles = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 12;
-    const skip = (page - 1) * limit;
+    const {
+      page = 1,
+      limit = 12,
+      category,
+      language,
+      country,
+      startDate,
+      endDate,
+    } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    let filter = {};
+    if (category) filter.category = { $in: [category] };
+    if (language) filter.language = language;
+    if (country) filter.country = { $in: [country] };
+    if (startDate && endDate) {
+      filter.pubDate = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+    }
 
     const articles = await articleModel
-      .find()
+      .find(filter)
       .sort({ pubDate: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(parseInt(limit));
 
-    const totalArticles = await articleModel.countDocuments();
-    const totalPages = Math.ceil(totalArticles / limit);
+    const total = await articleModel.countDocuments(filter);
 
     res.status(200).json({
-      message: "Articles retrieved successfully",
-      pagination: {
-        totalResults: totalArticles,
-        totalPages: totalPages,
-        currentPage: page,
-        limit: limit,
-      },
+      pagination: { totalPages: Math.ceil(total / limit), currentPage: page },
       data: articles,
     });
   } catch (error) {
-    res.status(400).json({
-      message: "Error retrieving articles",
-      error: error.message,
-    });
+    res.status(400).json({ error: error.message });
   }
 };
 

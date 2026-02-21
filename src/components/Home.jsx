@@ -1,47 +1,78 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-
-import ArticleCard from "./ArticleCard";
+import ArticleCard from "../components/ArticleCard";
 import MainComponent from "./MainComponent";
+import Sidebar from "./Sidebar";
 
 export default function Home() {
   const [news, setNews] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+
+  const [filters, setFilters] = useState({
+    category: "",
+    language: "",
+    startDate: "",
+    endDate: "",
+  });
+
+  const fetchNews = async (pageNum, currentFilters, isNewSearch = false) => {
+    setLoading(true);
+    try {
+      const { category, language, startDate, endDate } = currentFilters;
+      const url = `http://localhost:3000/api/news?page=${pageNum}&limit=12&category=${category}&language=${language}&startDate=${startDate}&endDate=${endDate}`;
+
+      const res = await axios.get(url);
+
+      if (isNewSearch) {
+        setNews(res.data.data);
+      } else {
+        setNews((prev) => [...prev, ...res.data.data]);
+      }
+
+      setTotalPages(res.data.pagination.totalPages);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFilterChange = (e) => {
+    const newFilters = { ...filters, [e.target.name]: e.target.value };
+    setFilters(newFilters);
+    setPage(1);
+    fetchNews(1, newFilters, true);
+  };
 
   useEffect(() => {
-    axios
-      .get("http://localhost:3000/api/news")
-      .then((result) => {
-        setNews(result.data.data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Fetch error:", err);
-        setLoading(false);
-      });
+    fetchNews(1, filters, true);
   }, []);
 
   return (
     <MainComponent>
-      <div className="min-h-screen bg-gray-50">
-        <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {news.map((article) => (
-                <ArticleCard key={article.article_id} article={article} />
-              ))}
-            </div>
-          )}
+      <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
+        <Sidebar filters={filters} handleFilterChange={handleFilterChange} />
 
-          {!loading && news.length === 0 && (
-            <div className="text-center py-20">
-              <p className="text-gray-500 text-lg">
-                No articles found in the database.
-              </p>
+        <main className="flex-1 p-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {news.map((article) => (
+              <ArticleCard key={article.article_id} article={article} />
+            ))}
+          </div>
+
+          {page < totalPages && (
+            <div className="mt-10 flex justify-center">
+              <button
+                onClick={() => {
+                  setPage((p) => p + 1);
+                  fetchNews(page + 1, filters);
+                }}
+                className="bg-blue-600 text-white px-8 py-2 rounded-full font-bold hover:bg-blue-700 transition"
+              >
+                {loading ? "Loading..." : "Show More"}
+              </button>
             </div>
           )}
         </main>
