@@ -4,7 +4,6 @@ export default function Sidebar({ filters, handleFilterChange }) {
   return (
     <aside className="w-full md:w-64 bg-white p-6 border-r border-gray-200 sticky top-0 h-fit md:h-screen">
       <h2 className="text-lg font-bold mb-6">Filters</h2>
-
       <div className="space-y-4">
         <div>
           <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
